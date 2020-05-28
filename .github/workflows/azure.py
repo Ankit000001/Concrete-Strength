@@ -1,25 +1,3 @@
-# This workflow will build and push a node.js application to an Azure Web App when a release is created.
-#
-# This workflow assumes you have already created the target Azure App Service web app.
-# For instructions see https://docs.microsoft.com/azure/app-service/app-service-plan-manage#create-an-app-service-plan
-#
-# To configure this workflow:
-#
-# 1. Set up a secret in your repository named AZURE_WEBAPP_PUBLISH_PROFILE with the value of your Azure publish profile.
-#    For instructions on obtaining the publish profile see: https://docs.microsoft.com/azure/app-service/deploy-github-actions#configure-the-github-secret
-#
-# 2. Change the values for the AZURE_WEBAPP_NAME, AZURE_WEBAPP_PACKAGE_PATH and NODE_VERSION environment variables  (below).
-#
-# For more information on GitHub Actions for Azure, refer to https://github.com/Azure/Actions
-# For more samples to get started with GitHub Action workflows to deploy to Azure, refer to https://github.com/Azure/actions-workflow-samples
-on:
-  release:
-    types: [created]
-
-env:
-  AZURE_WEBAPP_NAME: your-app-name    # set this to your application's name
-  AZURE_WEBAPP_PACKAGE_PATH: '.'      # set this to the path to your web app project, defaults to the repository root
-  NODE_VERSION: '10.x'                # set this to the node version to use
 
 # -*- coding: utf-8 -*
 import numpy as np           #Abbreviation for numpy array as i.e. alias,to play with arrays of columns in dataset
@@ -222,26 +200,21 @@ print("R2 of Lasso without hyperparameter tuning is:",lasso1score)
 #Hyperparameter Tuning(selecting best value for hyperparameter,for this we also do cross validation together,so that best hyperperameter is not limited to some data only)
 #1.Hyperparameter tuning for RidgeRegression,(here hyperparameter is only 1,alpha)
 
-jobs:
-  build-and-deploy:
-    name: Build and Deploy
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ env.NODE_VERSION }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-    - name: npm install, build, and test
-      run: |
-        # Build and test the project, then
-        # deploy to Azure Web App.
-        npm install
-        npm run build --if-present
-        npm run test --if-present
-    - name: 'Deploy to Azure WebApp'
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+c=[600,700,800,900,1000]
+alpha_grid={'alpha': c}    #defining all possible values of alpha that are 0 to 1,notice special syntax
+ridge2=Ridge()                            #Initializing model without giving any special random alpha value
+ridge2_cv=GridSearchCV(ridge2,alpha_grid,cv=10)   #syntax of GridSearchCV,including 10 fold cross validation within GridSearchCV
+ridge2_cv.fit(X_train,Y_train)                      #Fitting modified model(with best alpha)to training dataset
+alpharidge=ridge2_cv.best_params_                    #Just for knowing best value of alpha
+ridge2score=ridge2_cv.best_score_                    #R2 of best alpha(hyperparametertunned)ridge regression model
+print("The best value of hyperparameter alpha is:",alpharidge , "R2 of Ridge after hyperparameter tuning is:",ridge2score)
+
+#2.Hyperparameter tuning for LassoRegression,(here hyperparameter is only 1,alpha)
+d=[0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
+alpha_grid={'alpha': d}
+lasso2=Lasso()
+lasso2_cv=GridSearchCV(lasso2,alpha_grid,cv=10)
+lasso2_cv.fit(X_train,Y_train)
+alphalasso=lasso2_cv.best_params_ 
+lasso2score=lasso2_cv.best_score_   
+print("The best value of hyperparameter alpha is:",alphalasso , "R2 of Lasso after hyperparameter tuning is:",lasso2score)
